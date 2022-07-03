@@ -77,7 +77,7 @@ def register(funcapcha_response: str,) -> str:
         return "success"
 
 
-def main() -> bool:
+def main(name, surname, email, password) -> bool:
     try:
         res = solver.funcaptcha(
             sitekey=SITE_KEY,
@@ -101,10 +101,20 @@ if __name__ == '__main__':
     with open("orders.txt", "r", encoding="utf-8") as f:
         file_data: str = f.read()
     line: str
-    output_data: list[dict["user_name", "user_surname", "email", "password"]] = []
+    output_data: list[dict] = []
     for line in file_data.split("\n"):
         line_data: list[str] = line.split(":")
-        email: str = line_data[0]
+        user_email: str = line_data[0]
         user_name: str = line_data[1]
         user_surname: str = line_data[2]
-        main()
+        user_password: str = generate_random_password()
+        registered = main(email=user_email, name=user_name, surname=user_surname, password=user_password)
+        if registered:
+            output_data.append(
+                {
+                    "user_name": user_name,
+                    "user_surname": user_surname,
+                    "user_password": user_password,
+                    "user_email": user_email
+                }
+            )
