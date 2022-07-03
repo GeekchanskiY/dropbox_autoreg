@@ -14,6 +14,7 @@ digits = list(string.digits)
 special_characters = list("!@#$%^&*()")
 characters = list(string.ascii_letters + string.digits + "!@#$%^&*()")
 
+
 def generate_random_password() -> str:
     """
         Generates random password
@@ -49,7 +50,7 @@ def generate_random_password() -> str:
     return " ".join(map(str, password)).replace(" ", "")
 
 
-def register(funcapcha_response: str,) -> str:
+def register(funcapcha_response: str, name, surname, email, password) -> str:
     s: requests.Session = requests.session()
     s.get("https://www.dropbox.com/register")
     t: str = s.cookies["t"]
@@ -76,7 +77,9 @@ def register(funcapcha_response: str,) -> str:
         return "success"
 
 
-def main(name, surname, email, password) -> bool:
+def main(name, surname, email, password, recursion) -> bool:
+    if recursion == 5:
+        return False
     try:
         res = solver.funcaptcha(
             sitekey=SITE_KEY,
@@ -86,10 +89,12 @@ def main(name, surname, email, password) -> bool:
         print(str(e))
         return False
 
-    reg = register(res["code"])
+    reg = register(res["code"], name, surname, email, password)
     if reg == "funcaptcha_error":
         solver.report(res["captchaId"], False)
-        m = main(name, surname, email, password)
+        m = main(name, surname, email, password, recursion+1)
+        if not m:
+            return False
     else:
         solver.report(res["captchaId"], True)
     if reg == "email_error":
@@ -108,7 +113,7 @@ if __name__ == '__main__':
         user_surname: str = line_data[2]
         user_password: str = generate_random_password()
         print(f"Registering {user_name}")
-        registered = main(email=user_email, name=user_name, surname=user_surname, password=user_password)
+        registered = main(email=user_email, name=user_name, surname=user_surname, password=user_password, recursion=1)
         if registered:
             output_data.append(
                 {
