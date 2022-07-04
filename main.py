@@ -141,8 +141,7 @@ if __name__ == '__main__':
     result_str: str = ""
     print("Writing data")
     for line in output_data:
-        result_str += line["user_name"] + ":" + line["user_surname"] + ":" + line["user_password"] + ":" +\
-                      line["user_email"] + "\n"
+        result_str += line["user_email"] + ":" + line["user_password"] + "\n"
     with open("registered.txt", "w", encoding="utf-8") as f:
         f.write(result_str)
     print("Finished!")
