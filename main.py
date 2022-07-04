@@ -54,20 +54,33 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
     s: requests.Session = requests.session()
     s.get("https://www.dropbox.com/register")
     t: str = s.cookies["t"]
-    r = s.post("https://www.dropbox.com/ajax_register", data={
-        "fname": "Dimka",
-        "lname": "Nevidimka",
-        "email": "ufdgoisdyuiozyuqtazxcveuigfhjkunbzvkmcnlk@mail.ru",
+    r = s.post("https://www.dropbox.com/checkout/create_user", data={
+        "fname": name,
+        "lname": surname,
+        "email": email,
         "tos_agree": True,
-        "password": "zxcvbzZOIUFSzxcmnvbmzx",
+        "password": password,
         "funcaptcha-response": funcapcha_response,
         "t": t,
         "is_xhr": True,
         "tracking_params": {},
-        "signup_url": "https://www.dropbox.com/register",
-        "signup_data": ""
+        "signup_url": "https://www.dropbox.com/business/try",
+        "schedule_id": 2,
+        'signup_tag': 'team',
+        "signup_data": "",
+        "birthdate_ts": "",
+        "county_code": "BY",
+        "team_name": user_surname,
+        "tos_version": 3,
+        "team_num_users": 5,
+        "account_info_type": "new",
+        "billing_schedule": "yearly",
+        "currency": "USD",
+        "signup_type": "trial"
 
     })
+    print(r.text)
+    print(password)
     if r.text[0:3] == "err":
         if r.text[6:11] == "email":
             return "email_error"
@@ -78,12 +91,13 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
 
 
 def main(name, surname, email, password, recursion) -> bool:
+    print(f"attempt {recursion}")
     if recursion == 5:
         return False
     try:
         res = solver.funcaptcha(
             sitekey=SITE_KEY,
-            url="https://www.dropbox.com/register"
+            url="https://www.dropbox.com/business/try"
         )
     except Exception as e:
         print(str(e))
