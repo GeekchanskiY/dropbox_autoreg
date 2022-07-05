@@ -1,18 +1,41 @@
+import time
+
 import requests
 from twocaptcha import TwoCaptcha
-from vars import TWOCAPTCHA_KEY
 import string
 import random
+from selenium import webdriver
+from selenium.webdriver.common.by import By
 
-solver = TwoCaptcha(TWOCAPTCHA_KEY)
+solver = TwoCaptcha("KEY")
+
+driver = webdriver.Chrome(executable_path="chromedriver.exe")
 
 SITE_KEY: str = "68CECE5D-F360-8653-CA80-3CF99353DDD2"
-
 
 alphabets = list(string.ascii_letters)
 digits = list(string.digits)
 special_characters = list("!@#$%^&*()")
 characters = list(string.ascii_letters + string.digits + "!@#$%^&*()")
+
+def login_to_dropbox(driver: webdriver, login: str, password: str, team_name: str):
+    driver.get("https://www.dropbox.com/login")
+    time.sleep(5)
+    inputs = driver.find_elements(By.TAG_NAME, 'input')
+    inputs[0].send_keys(login)
+    inputs[1].send_keys(password)
+    driver.find_element(By.CLASS_NAME, "signin-button").click()
+    time.sleep(10)
+    driver.get("https://www.dropbox.com/business/try?sku=std")
+    time.sleep(7)
+    driver.find_element(By.ID, "team_name").send_keys(team_name)
+    driver.find_element(By.CLASS_NAME, "input__checkbox").click()
+    driver.find_element(By.CLASS_NAME, "confirm-button").click()
+    driver.get("https://www.dropbox.com/home")
+    time.sleep(3)
+    driver.find_element(By.CLASS_NAME, "dig-Avatar").click()
+    time.sleep(0.5)
+    driver.find_elements(By.CLASS_NAME, "dig-Menu-row-title")[-2].click()
 
 
 def generate_random_password() -> str:
@@ -69,8 +92,8 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
         'signup_tag': 'team',
         "signup_data": "",
         "birthdate_ts": "",
-        "county_code": "BY",
-        "team_name": user_surname,
+        "county_code": "US",
+        "team_name": surname,
         "tos_version": 3,
         "team_num_users": 5,
         "account_info_type": "new",
@@ -80,6 +103,10 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
 
     })
     print(r.text)
+    if r.text.find("Too many attempts. Please try later") != -1:
+        print("Too many attempts. Waiting 10 min")
+        time.sleep(600)
+        return register(funcapcha_response, name, surname, email, password)
     print(password)
     if r.text[0:3] == "err":
         if r.text[6:11] == "email":
@@ -87,6 +114,11 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
         elif r.text[6:11] == "funca":
             return "funcaptcha_error"
     else:
+        try:
+            login_to_dropbox(driver, login=email, password=password, team_name=surname)
+        except Exception as e:
+            print(str(e))
+            return "error"
         return "success"
 
 
@@ -101,6 +133,9 @@ def main(name, surname, email, password, recursion) -> bool:
         )
     except Exception as e:
         print(str(e))
+        m = main(name, surname, email, password, recursion + 1)
+        if not m:
+            return False
         return False
 
     reg = register(res["code"], name, surname, email, password)
@@ -113,12 +148,17 @@ def main(name, surname, email, password, recursion) -> bool:
         solver.report(res["captchaId"], True)
     if reg == "email_error":
         return False
+    if reg == "error":
+        return False
     return True
 
 
 if __name__ == '__main__':
-    with open("orders.txt", "r", encoding="utf-8") as f:
-        file_data: str = f.read()
+    try:
+        with open("orders.txt", "r", encoding="utf-8") as f:
+            file_data: str = f.read()
+    except Exception as e:
+        input("File not found")
     output_data: list[dict] = []
     for line in file_data.split("\n"):
         line_data: list[str] = line.split(":")
