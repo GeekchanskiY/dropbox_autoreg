@@ -18,6 +18,7 @@ digits = list(string.digits)
 special_characters = list("!@#$%^&*()")
 characters = list(string.ascii_letters + string.digits + "!@#$%^&*()")
 
+
 def login_to_dropbox(driver: webdriver, login: str, password: str, team_name: str):
     driver.get("https://www.dropbox.com/login")
     time.sleep(5)
@@ -102,10 +103,13 @@ def register(funcapcha_response: str, name, surname, email, password) -> str:
         "signup_type": "trial"
 
     })
-    print(r.text)
+
     if r.text.find("Too many attempts. Please try later") != -1:
         print("Too many attempts. Waiting 10 min")
+
+        # Sleep if too many attempts error
         time.sleep(600)
+
         return register(funcapcha_response, name, surname, email, password)
     print(password)
     if r.text[0:3] == "err":
@@ -154,12 +158,15 @@ def main(name, surname, email, password, recursion) -> bool:
 
 
 if __name__ == '__main__':
+
     try:
         with open("orders.txt", "r", encoding="utf-8") as f:
             file_data: str = f.read()
     except Exception as e:
         input("File not found")
+
     output_data: list[dict] = []
+
     for line in file_data.split("\n"):
         line_data: list[str] = line.split(":")
         user_email: str = line_data[0]
@@ -168,6 +175,7 @@ if __name__ == '__main__':
         user_password: str = generate_random_password()
         print(f"Registering {user_name}")
         registered = main(email=user_email, name=user_name, surname=user_surname, password=user_password, recursion=1)
+
         if registered:
             output_data.append(
                 {
@@ -178,6 +186,10 @@ if __name__ == '__main__':
                 }
             )
             print("registered")
+
+            # Sleep between users
+            time.sleep(60)
+
     result_str: str = ""
     print("Writing data")
     for line in output_data:
